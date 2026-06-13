@@ -767,7 +767,7 @@
           <div class="sel-card goal-card" onclick="pick(this,'goal','lose')">
             <div class="sc-icon">🔥</div>
             <div class="sc-title">Lose Weight</div>
-            <div class="sc-desc">−500 cal deficit</div>
+            <div class="sc-desc">−300 cal deficit</div>
           </div>
           <div class="sel-card goal-card" onclick="pick(this,'goal','gain')">
             <div class="sc-icon">💪</div>
@@ -931,7 +931,10 @@
         <div class="day-tabs" id="day-tabs"></div>
         <div class="day-macros" id="day-macros"></div>
         <div class="meal-list" id="meal-list"></div>
-        <div class="btn-row" style="margin-top:20px">
+        <p style="font-size:0.72rem;color:var(--gray-400);margin-top:18px;line-height:1.5;text-align:center;">
+          ⚠️ TDEE is an estimate based on the Mifflin-St Jeor equation and may vary by ±200–300 cal depending on individual metabolism, muscle mass, and daily variation. Use these meals as a guide and adjust portions to how you feel.
+        </p>
+        <div class="btn-row" style="margin-top:14px">
           <button class="btn btn-secondary" onclick="goStep(1)" style="flex:1">← Start Over</button>
         </div>
       </div>
@@ -1153,7 +1156,7 @@ async function generate() {
 
   S.bmr    = computeBMR();
   S.tdee   = computeTDEE(S.bmr);
-  S.target = S.goal==='lose' ? S.tdee-500 : S.goal==='gain' ? S.tdee+300 : S.tdee;
+  S.target = S.goal==='lose' ? S.tdee-300 : S.goal==='gain' ? S.tdee+300 : S.tdee;
 
   goStep(4);
   document.getElementById('s4-loading').classList.remove('hidden');
