@@ -580,48 +580,6 @@
       display: flex; align-items: center; justify-content: center;
     }
 
-    /* ── API Key Modal ── */
-    .modal-overlay {
-      position: fixed; inset: 0;
-      background: rgba(0,0,0,0.45);
-      display: flex; align-items: center; justify-content: center;
-      z-index: 100;
-      padding: 20px;
-    }
-    .modal {
-      background: #fff;
-      border-radius: var(--rxl);
-      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-      padding: 32px 28px;
-      width: 100%; max-width: 420px;
-    }
-    .modal-icon { font-size: 2.4rem; margin-bottom: 12px; }
-    .modal-title { font-size: 1.2rem; font-weight: 700; color: var(--gray-900); margin-bottom: 6px; }
-    .modal-sub { font-size: 0.83rem; color: var(--gray-500); margin-bottom: 20px; line-height: 1.5; }
-    .modal input[type="text"] {
-      width: 100%;
-      padding: 11px 14px;
-      border: 2px solid var(--gray-200);
-      border-radius: var(--r);
-      font-size: 0.88rem;
-      color: var(--gray-800);
-      background: var(--gray-50);
-      outline: none;
-      font-family: monospace;
-      margin-bottom: 14px;
-      transition: border-color 0.2s;
-    }
-    .modal input[type="text"]:focus { border-color: var(--green); background: #fff; }
-    .modal-note { font-size: 0.75rem; color: var(--gray-400); margin-top: 10px; }
-    .modal-note a { color: var(--green); text-decoration: none; }
-
-    /* Settings button */
-    .settings-btn {
-      background: none; border: none; cursor: pointer;
-      color: var(--gray-400); font-size: 1.1rem; padding: 4px;
-      margin-left: 8px; transition: color 0.2s;
-    }
-    .settings-btn:hover { color: var(--gray-700); }
 
     /* Utility */
     .hidden { display: none !important; }
@@ -639,22 +597,9 @@
 </head>
 <body>
 
-<!-- API Key Modal -->
-<div class="modal-overlay" id="key-modal">
-  <div class="modal">
-    <div class="modal-icon">🔑</div>
-    <div class="modal-title">Enter your Groq API Key</div>
-    <div class="modal-sub">This app uses Groq's free AI to generate your meal plan. Your key is saved only in your browser — never sent anywhere else.</div>
-    <input type="text" id="key-input" placeholder="gsk_..." />
-    <button class="btn btn-primary btn-full" onclick="saveKey()">Save &amp; Continue</button>
-    <div class="modal-note">Get a free key at <a href="https://console.groq.com" target="_blank">console.groq.com</a> → API Keys</div>
-  </div>
-</div>
-
 <header class="app-header">
   <span class="logo">🥗 AI Health</span>
   <span class="tagline">Personalized Meal Planner</span>
-  <button class="settings-btn" onclick="showKeyModal()" title="Update API Key">⚙️</button>
 </header>
 
 <div class="container">
@@ -947,29 +892,7 @@
 </div><!-- /container -->
 
 <script>
-const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
-
-function getKey() { return localStorage.getItem('groq_api_key') || ''; }
-
-function saveKey() {
-  const val = document.getElementById('key-input').value.trim();
-  if (!val.startsWith('gsk_')) {
-    alert('Please enter a valid Groq key (starts with gsk_)');
-    return;
-  }
-  localStorage.setItem('groq_api_key', val);
-  document.getElementById('key-modal').classList.add('hidden');
-}
-
-function showKeyModal() {
-  const existing = getKey();
-  if (existing) document.getElementById('key-input').value = existing;
-  document.getElementById('key-modal').classList.remove('hidden');
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  if (!getKey()) showKeyModal();
-});
+const GROQ_URL = '/.netlify/functions/generate';
 
 const CUISINES = [
   { name:'Indian',         flag:'🇮🇳' },
@@ -1224,10 +1147,7 @@ Fill all 7 days (Monday–Sunday) with complete, varied meals.`;
   try {
     const res = await fetch(GROQ_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${getKey()}`
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'llama-3.3-70b-versatile',
         messages: [{ role: 'user', content: prompt }],
