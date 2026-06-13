@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AI Health — Personalized 7-Day Meal Planner</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -936,6 +937,7 @@
         </p>
         <div class="btn-row" style="margin-top:14px">
           <button class="btn btn-secondary" onclick="goStep(1)" style="flex:1">← Start Over</button>
+          <button class="btn btn-primary" onclick="downloadPDF()" style="flex:1">⬇ Download PDF</button>
         </div>
       </div>
     </div>
@@ -1337,6 +1339,126 @@ function showDay(idx) {
 
     list.appendChild(card);
   });
+}
+
+function downloadPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+  const pageW = 210, pageH = 297, margin = 16, contentW = pageW - margin * 2;
+  const GREEN = [22, 163, 74], GREEN_BG = [240, 253, 244];
+  const DARK = [31, 41, 55], MID = [107, 114, 128], LIGHT = [243, 244, 246];
+  let y = 0;
+
+  function checkPage(needed = 12) {
+    if (y + needed > pageH - 14) { doc.addPage(); y = margin; }
+  }
+
+  // Green header banner
+  doc.setFillColor(...GREEN);
+  doc.rect(0, 0, pageW, 26, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(16);
+  doc.text('AI Health — Your 7-Day Meal Plan', margin, 17);
+  y = 32;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(...MID);
+  doc.text(`Generated ${new Date().toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' })}`, margin, y);
+  y += 8;
+
+  // Profile summary
+  const goalLabel = { maintain:'Maintain Weight', lose:'Lose Weight (−300 cal)', gain:'Build Muscle (+300 cal)' }[S.goal];
+  const dietLabel = { vegetarian:'Vegetarian', vegan:'Vegan', nonveg:'Non-Vegetarian' }[S.diet];
+  doc.setFillColor(...LIGHT);
+  doc.roundedRect(margin, y, contentW, 22, 2, 2, 'F');
+  doc.setFontSize(8); doc.setTextColor(...MID); doc.setFont('helvetica', 'bold');
+  doc.text('BMR', margin + 4, y + 7);
+  doc.text('TDEE', margin + 46, y + 7);
+  doc.text('Daily Target', margin + 92, y + 7);
+  doc.text('Goal', margin + 138, y + 7);
+  doc.setFont('helvetica', 'normal'); doc.setTextColor(...DARK); doc.setFontSize(9);
+  doc.text(`${S.bmr.toLocaleString()} cal`, margin + 4, y + 15);
+  doc.text(`${S.tdee.toLocaleString()} cal`, margin + 46, y + 15);
+  doc.text(`${S.target.toLocaleString()} cal`, margin + 92, y + 15);
+  doc.text(goalLabel, margin + 138, y + 15);
+  y += 26;
+
+  doc.setFontSize(8); doc.setTextColor(...MID);
+  doc.text(`Diet: ${dietLabel}   |   Cuisines: ${S.cuisines.join(', ')}${S.excl.length ? '   |   Excluding: ' + S.excl.join(', ') : ''}`, margin, y);
+  y += 10;
+
+  const MEAL_ORDER = ['breakfast','lunch','dinner','snack'];
+  const MEAL_LABEL = { breakfast:'BREAKFAST', lunch:'LUNCH', dinner:'DINNER', snack:'SNACK' };
+
+  S.plan.forEach(day => {
+    checkPage(22);
+
+    // Day header
+    doc.setFillColor(...GREEN);
+    doc.roundedRect(margin, y, contentW, 9, 2, 2, 'F');
+    doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(10);
+    doc.text(day.day, margin + 4, y + 6.2);
+    doc.setFont('helvetica','normal'); doc.setFontSize(7.5);
+    doc.text(`${(day.totalCalories||0).toLocaleString()} cal  ·  ${day.totalProtein||0}g protein  ·  ${day.totalCarbs||0}g carbs  ·  ${day.totalFat||0}g fat`, pageW - margin - 3, y + 6.2, { align:'right' });
+    y += 12;
+
+    MEAL_ORDER.forEach(key => {
+      const m = day.meals?.[key];
+      if (!m) return;
+      checkPage(20);
+
+      doc.setFillColor(...GREEN_BG);
+      doc.rect(margin, y, contentW, 8, 'F');
+      doc.setTextColor(...GREEN); doc.setFont('helvetica','bold'); doc.setFontSize(7);
+      doc.text(MEAL_LABEL[key], margin + 3, y + 5.3);
+      doc.setTextColor(...DARK); doc.setFontSize(8.5);
+      doc.text(`${m.name}`, margin + 28, y + 5.3);
+      doc.setTextColor(...MID); doc.setFont('helvetica','normal'); doc.setFontSize(7.5);
+      doc.text(`${m.calories} cal · ${m.protein}g protein${m.prepTime ? ' · ' + m.prepTime : ''}`, pageW - margin - 3, y + 5.3, { align:'right' });
+      y += 11;
+
+      // Ingredients
+      checkPage(8);
+      doc.setFontSize(7); doc.setFont('helvetica','bold'); doc.setTextColor(...MID);
+      doc.text('INGREDIENTS', margin + 3, y); y += 4;
+      doc.setFont('helvetica','normal'); doc.setTextColor(...DARK);
+      (m.ingredients || []).forEach(ing => {
+        checkPage(5);
+        const lines = doc.splitTextToSize(`• ${ing}`, contentW - 6);
+        doc.text(lines, margin + 3, y);
+        y += lines.length * 3.8;
+      });
+      y += 3;
+
+      // Instructions
+      checkPage(8);
+      doc.setFontSize(7); doc.setFont('helvetica','bold'); doc.setTextColor(...MID);
+      doc.text('INSTRUCTIONS', margin + 3, y); y += 4;
+      doc.setFont('helvetica','normal'); doc.setTextColor(...DARK);
+      (m.instructions || []).forEach((step, i) => {
+        checkPage(5);
+        const lines = doc.splitTextToSize(`${i + 1}. ${step}`, contentW - 6);
+        doc.text(lines, margin + 3, y);
+        y += lines.length * 3.8;
+      });
+      y += 5;
+    });
+    y += 4;
+  });
+
+  // Footer
+  const total = doc.getNumberOfPages();
+  for (let i = 1; i <= total; i++) {
+    doc.setPage(i);
+    doc.setFontSize(7); doc.setTextColor(...MID);
+    doc.text('ai-health-planner.netlify.app', margin, pageH - 6);
+    doc.text(`Page ${i} of ${total}`, pageW - margin, pageH - 6, { align:'right' });
+  }
+
+  doc.save('AI-Health-7-Day-Meal-Plan.pdf');
 }
 </script>
 </body>
