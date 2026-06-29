@@ -1161,15 +1161,7 @@ Fill all 7 days (Monday–Sunday) with complete, varied meals.`;
       throw new Error(e.error?.message || `API error ${res.status}: ${res.statusText}`);
     }
 
-    // Read streaming plain-text response (chunks arrive as Claude generates)
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let raw = '';
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      raw += decoder.decode(value, { stream: true });
-    }
+    const raw = await res.text();
     if (!raw) throw new Error('Empty response from API.');
 
     // Strip markdown fences if present
