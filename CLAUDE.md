@@ -1,10 +1,10 @@
-# CLAUDE.md — AI Health / Meal Planner
+# CLAUDE.md — Personalised Meal Planner by Apurv
 
 ## Project overview
 - Personalized 7-day AI meal planner for adults
 - Collects age, gender, height, weight, activity level, goal → calculates BMR & TDEE (Mifflin-St Jeor)
 - User picks diet type (vegetarian/vegan/non-veg), meat exclusions, allergies, and 3 favorite cuisines
-- Calls Groq API (Llama 3.3 70B) to generate a full 7-day meal plan with recipes, ingredients, instructions, and macros
+- Calls Claude API (Haiku 4.5) to generate a full 7-day meal plan with recipes, ingredients, instructions, and macros
 - Users can download the plan as a PDF (jsPDF via CDN)
 - Pure HTML/CSS/JS — single file: `index.html`
 - No framework, no build step, no npm
@@ -36,17 +36,18 @@ AI Health/
 ```
 
 ## Serverless function
-- `netlify/functions/generate.js` — proxies POST requests to Groq API
-- Groq API key stored as Netlify environment variable: `GROQ_API_KEY`
+- `netlify/functions/generate.js` — proxies POST requests to Claude API
+- Anthropic API key stored as Netlify environment variable: `ANTHROPIC_API_KEY`
 - Client calls `/.netlify/functions/generate` — never sees the key
 - Function uses Node 18 native fetch (no dependencies)
+- Function translates frontend's OpenAI-format body → Anthropic Messages API → returns OpenAI-compatible response
 
 ## API / AI
-- Provider: **Groq** (console.groq.com) — free tier, 14,400 req/day
-- Model: `llama-3.3-70b-versatile`
-- Endpoint: `https://api.groq.com/openai/v1/chat/completions`
-- Key stored in: Netlify env var `GROQ_API_KEY` (site: 6add3a7d-a920-4abd-ae5a-d0a9770738f3)
-- Key format: `gsk_...`
+- Provider: **Anthropic Claude** (console.anthropic.com) — paid tier, $20 credits
+- Model: `claude-haiku-4-5` (~$0.015 per meal plan request)
+- Endpoint: `https://api.anthropic.com/v1/messages`
+- Key stored in: Netlify env var `ANTHROPIC_API_KEY` (site: 6add3a7d-a920-4abd-ae5a-d0a9770738f3)
+- Key format: `sk-ant-...`
 
 ## BMR / TDEE logic
 - Formula: Mifflin-St Jeor
@@ -59,6 +60,10 @@ AI Health/
   - Lose weight: TDEE − 300 cal (sustainable deficit, ~0.3 kg/week)
   - Build muscle: TDEE + 300 cal
 - TDEE caveat shown on results: estimates vary ±200–300 cal
+
+## App header
+- Displays as: `🥗 Personalised Meal Planner by Apurv` (top-left, sticky)
+- Tagline: `Personalized Meal Planner` (top-right, smaller text)
 
 ## 4-step UI flow
 1. **Profile** — age, gender, height (ft/in or cm), weight (lbs or kg), activity level, goal

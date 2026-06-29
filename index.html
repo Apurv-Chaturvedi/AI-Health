@@ -892,7 +892,7 @@
 </div><!-- /container -->
 
 <script>
-const GROQ_URL = '/.netlify/functions/generate';
+const API_URL = '/.netlify/functions/generate';
 
 const CUISINES = [
   { name:'Indian',         flag:'🇮🇳' },
@@ -1145,11 +1145,11 @@ Return ONLY a valid JSON object with NO markdown fences, no extra text. Use this
 Fill all 7 days (Monday–Sunday) with complete, varied meals.`;
 
   try {
-    const res = await fetch(GROQ_URL, {
+    const res = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model: 'claude-haiku-4-5',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.75,
         max_tokens: 8192
