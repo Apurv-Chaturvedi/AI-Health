@@ -1396,13 +1396,30 @@ function _buildPDF() {
   const filename = 'AI-Health-7-Day-Meal-Plan.pdf';
   const blob = doc.output('blob');
 
-  // Edge legacy (pre-Chromium) has msSaveBlob
+  // Old Edge / IE: use proprietary save API
   if (window.navigator && window.navigator.msSaveBlob) {
     window.navigator.msSaveBlob(blob, filename);
     return;
   }
 
   const url = URL.createObjectURL(blob);
+
+  // Detect sandboxed iframe (Notion embed, Netlify preview pane, etc.)
+  // Downloads are blocked in sandboxed frames — open in new tab instead
+  let inIframe = false;
+  try { inIframe = window.self !== window.top; } catch (e) { inIframe = true; }
+
+  if (inIframe) {
+    const opened = window.open(url, '_blank');
+    if (!opened) {
+      alert('Your browser blocked the popup.\n\nOpen the app directly at mealplanner-ai.netlify.app to download your plan.');
+    } else {
+      alert('Your PDF has opened in a new tab — use Ctrl+S (or Cmd+S) to save it.');
+    }
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
+    return;
+  }
+
   const a = document.createElement('a');
   a.href = url;
   a.download = filename;
@@ -1410,7 +1427,6 @@ function _buildPDF() {
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  // Delay revocation so Edge has time to start the download before the URL is freed
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 </script>
