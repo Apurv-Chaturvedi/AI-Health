@@ -1393,7 +1393,16 @@ function _buildPDF() {
     doc.text(`Page ${i} of ${total}`, pageW - margin, pageH - 6, { align:'right' });
   }
 
-  doc.save('AI-Health-7-Day-Meal-Plan.pdf');
+  // Synchronous download — avoids Chrome/Edge blocking downloads from setTimeout contexts
+  const blob = doc.output('blob');
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'AI-Health-7-Day-Meal-Plan.pdf';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 </script>
 </body>
