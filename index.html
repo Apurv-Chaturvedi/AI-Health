@@ -816,14 +816,14 @@
   <div class="panel" id="p3">
     <div class="card">
       <div class="card-title">Favorite Cuisines</div>
-      <div class="card-sub">Pick exactly 3 cuisines you love — your meals will reflect these</div>
+      <div class="card-sub">Pick 1–3 cuisines you love — your meals will reflect these</div>
 
       <div class="cuisine-counter">
         <span id="cuis-count">0</span> / 3 selected
       </div>
 
       <div class="cuisine-grid" id="cuis-grid"></div>
-      <div class="err-msg" id="cuis-e">Please select exactly 3 cuisines</div>
+      <div class="err-msg" id="cuis-e">Please select at least 1 cuisine</div>
 
       <div class="btn-row">
         <button class="btn btn-secondary" onclick="goStep(2)">← Back</button>
@@ -1076,7 +1076,7 @@ function computeTDEE(bmr) {
 
 /* ── Generate ── */
 async function generate() {
-  if (S.cuisines.length !== 3) { showE('cuis-e','Please select exactly 3 cuisines'); return; }
+  if (S.cuisines.length < 1) { showE('cuis-e','Please select at least 1 cuisine'); return; }
   hideE('cuis-e');
 
   S.bmr    = computeBMR();
@@ -1111,7 +1111,7 @@ Requirements:
 - High protein: at least ${Math.round(S.target * 0.30 / 4)}g protein per day (30 % of calories)
 - All meals easy to prepare (under 30 minutes)
 - 4 meals per day: breakfast, lunch, dinner, snack
-- Rotate between the three preferred cuisines throughout the week
+- Rotate between the preferred cuisine(s) throughout the week
 - Practical, accessible ingredients
 
 Return ONLY a valid JSON object with NO markdown fences, no extra text. Use this exact structure:
