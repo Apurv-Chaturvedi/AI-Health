@@ -1261,6 +1261,22 @@ function showDay(idx) {
 }
 
 function downloadPDF() {
+  if (!window.jspdf) {
+    alert('PDF library not loaded yet — please wait a moment and try again.');
+    return;
+  }
+  try {
+    _buildPDF();
+  } catch (err) {
+    console.error('PDF error:', err);
+    alert('Could not generate PDF: ' + err.message);
+  }
+}
+
+function _buildPDF() {
+  // Strip emojis and characters outside Latin-1 (jsPDF Helvetica only supports up to U+00FF)
+  const safe = (str) => (str || '').replace(/[^\x00-\xFF]/g, '').trim();
+
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
@@ -1334,7 +1350,7 @@ function downloadPDF() {
       doc.setTextColor(...GREEN); doc.setFont('helvetica','bold'); doc.setFontSize(7);
       doc.text(MEAL_LABEL[key], margin + 3, y + 5.3);
       doc.setTextColor(...DARK); doc.setFontSize(8.5);
-      doc.text(`${m.name}`, margin + 28, y + 5.3);
+      doc.text(safe(m.name), margin + 28, y + 5.3);
       doc.setTextColor(...MID); doc.setFont('helvetica','normal'); doc.setFontSize(7.5);
       doc.text(`${m.calories} cal · ${m.protein}g protein${m.prepTime ? ' · ' + m.prepTime : ''}`, pageW - margin - 3, y + 5.3, { align:'right' });
       y += 11;
@@ -1346,7 +1362,7 @@ function downloadPDF() {
       doc.setFont('helvetica','normal'); doc.setTextColor(...DARK);
       (m.ingredients || []).forEach(ing => {
         checkPage(5);
-        const lines = doc.splitTextToSize(`• ${ing}`, contentW - 6);
+        const lines = doc.splitTextToSize(`• ${safe(ing)}`, contentW - 6);
         doc.text(lines, margin + 3, y);
         y += lines.length * 3.8;
       });
@@ -1359,7 +1375,7 @@ function downloadPDF() {
       doc.setFont('helvetica','normal'); doc.setTextColor(...DARK);
       (m.instructions || []).forEach((step, i) => {
         checkPage(5);
-        const lines = doc.splitTextToSize(`${i + 1}. ${step}`, contentW - 6);
+        const lines = doc.splitTextToSize(`${i + 1}. ${safe(step)}`, contentW - 6);
         doc.text(lines, margin + 3, y);
         y += lines.length * 3.8;
       });
