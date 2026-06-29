@@ -36,11 +36,13 @@ AI Health/
 ```
 
 ## Serverless function
-- `netlify/functions/generate.js` — proxies POST requests to Claude API
+- `netlify/functions/generate.mjs` — Netlify Functions v2 (ESM), streams Claude API response to client
 - Anthropic API key stored as Netlify environment variable: `ANTHROPIC_API_KEY`
 - Client calls `/.netlify/functions/generate` — never sees the key
-- Function uses Node 18 native fetch (no dependencies)
-- Function translates frontend's OpenAI-format body → Anthropic Messages API → returns OpenAI-compatible response
+- No npm dependencies — uses Node native fetch and Web Streams API (`TransformStream`, `ReadableStream`)
+- Calls Anthropic with `stream: true` → reads SSE events → extracts `text_delta` chunks → pipes plain text to client
+- Frontend accumulates chunks into a string, then parses as JSON at the end
+- Streaming keeps the connection alive so Netlify's function timeout never fires
 
 ## API / AI
 - Provider: **Anthropic Claude** (console.anthropic.com) — paid tier, $20 credits
@@ -105,8 +107,12 @@ AI Health/
 - Netlify zip deploy API does NOT process serverless functions — must use Git-connected deploy OR `npx netlify-cli deploy --prod`
 - GitHub push protection blocks commits containing API keys — never hardcode keys in source
 - jsPDF CDN must be loaded before the `<script>` block that calls `window.jspdf`
-- Claude API response shape differs from Groq/OpenAI: text is at `data.content[0].text` not `data.choices[0].message.content` — generate.js translates this so index.html doesn't need to change
+- Claude API response shape differs from Groq/OpenAI: text is at `data.content[0].text` not `data.choices[0].message.content`
+- Netlify function timeout (even at 26s max) is not enough for a full 7-day plan — must use streaming to keep the connection alive
+- Streaming requires Netlify Functions v2 (ESM, `export default`) — use `.mjs` extension, no package.json needed
+- Frontend must read `res.body.getReader()` in a loop to accumulate streaming chunks before parsing JSON
 - After adding a new Netlify env var, must trigger a redeploy for it to take effect (env vars don't auto-redeploy)
+- `npx netlify-cli deploy --prod --build false` deploys files directly but may not always pick up `netlify.toml` config changes — prefer `git push` for config changes
 
 ## Code style
 - Everything inline in `index.html` — `<style>` and `<script>` tags, no external files except jsPDF CDN
