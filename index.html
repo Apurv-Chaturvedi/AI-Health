@@ -1393,16 +1393,25 @@ function _buildPDF() {
     doc.text(`Page ${i} of ${total}`, pageW - margin, pageH - 6, { align:'right' });
   }
 
-  // Synchronous download — avoids Chrome/Edge blocking downloads from setTimeout contexts
+  const filename = 'AI-Health-7-Day-Meal-Plan.pdf';
   const blob = doc.output('blob');
+
+  // Edge legacy (pre-Chromium) has msSaveBlob
+  if (window.navigator && window.navigator.msSaveBlob) {
+    window.navigator.msSaveBlob(blob, filename);
+    return;
+  }
+
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'AI-Health-7-Day-Meal-Plan.pdf';
+  a.download = filename;
+  a.style.display = 'none';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  // Delay revocation so Edge has time to start the download before the URL is freed
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 </script>
 </body>
