@@ -882,7 +882,7 @@
         </p>
         <div class="btn-row" style="margin-top:14px">
           <button class="btn btn-secondary" onclick="goStep(1)" style="flex:1">← Start Over</button>
-          <button class="btn btn-primary" onclick="downloadPDF()" style="flex:1">⬇ Download PDF</button>
+          <button class="btn btn-primary" id="pdf-btn" onclick="downloadPDF()" style="flex:1">⬇ Download PDF</button>
         </div>
       </div>
     </div>
@@ -908,6 +908,16 @@ const CUISINES = [
   { name:'Greek',          flag:'🥙' },
   { name:'French',         flag:'🥐' },
 ];
+
+/* ── Iframe detection (Notion embed, etc.) ── */
+let IN_IFRAME = false;
+try { IN_IFRAME = window.self !== window.top; } catch (e) { IN_IFRAME = true; }
+if (IN_IFRAME) {
+  document.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('pdf-btn');
+    if (btn) btn.textContent = '↗ View PDF in new tab';
+  });
+}
 
 /* ── App state ── */
 const S = {
@@ -1412,9 +1422,7 @@ function _buildPDF() {
   if (inIframe) {
     const opened = window.open(url, '_blank');
     if (!opened) {
-      alert('Your browser blocked the popup.\n\nOpen the app directly at mealplanner-ai.netlify.app to download your plan.');
-    } else {
-      alert('Your PDF has opened in a new tab — use Ctrl+S (or Cmd+S) to save it.');
+      alert('Popups are blocked. To download your PDF, open ' + window.location.href + ' directly in a new browser tab.');
     }
     setTimeout(() => URL.revokeObjectURL(url), 30000);
     return;
