@@ -31,7 +31,7 @@ AI Health/
 ├── _headers                    # Content-Type + X-Frame-Options for iframe embedding
 ├── netlify/
 │   └── functions/
-│       └── generate.js         # Serverless function — proxies Groq API call
+│       └── generate.js         # Serverless function — proxies Claude API call
 └── CLAUDE.md
 ```
 
@@ -87,13 +87,26 @@ AI Health/
 - Account slug: `apurv-chaturvedi29`
 - Site ID: `6add3a7d-a920-4abd-ae5a-d0a9770738f3`
 - Personal access token: stored in chat history (regenerate at app.netlify.com → User settings → Applications)
+- Local project linked to Netlify site via `npx netlify-cli link --id 6add3a7d-a920-4abd-ae5a-d0a9770738f3`
+- Netlify CLI available via `npx netlify-cli` (no global install needed)
+- To set env vars from terminal: `npx netlify-cli env:set KEY value`
+- To redeploy from terminal: `npx netlify-cli deploy --prod --build false`
+
+## Provider migration history
+| Date | Provider | Model | Reason |
+|------|----------|-------|--------|
+| Launch | Gemini API | — | Free tier had 0 quota on this Google account — abandoned |
+| Early | Groq | llama-3.3-70b-versatile | Free tier (14,400 req/day) hit limit quickly from testers |
+| 2026-06-29 | **Anthropic Claude** | claude-haiku-4-5 | Switched to paid tier ($20 credits, ~$0.015/request) — no daily cap |
 
 ## Gotchas
 - Gemini API (all `AQ.` format keys) had limit: 0 on free tier for this Google account — switched to Groq
-- Netlify zip deploy API does NOT process serverless functions — must use Git-connected deploy
+- Groq free tier (14,400 req/day) was exhausted by early testers — switched to Claude paid tier
+- Netlify zip deploy API does NOT process serverless functions — must use Git-connected deploy OR `npx netlify-cli deploy --prod`
 - GitHub push protection blocks commits containing API keys — never hardcode keys in source
 - jsPDF CDN must be loaded before the `<script>` block that calls `window.jspdf`
-- Groq returns JSON directly (no markdown fences) but the response parser strips them anyway as a safety net
+- Claude API response shape differs from Groq/OpenAI: text is at `data.content[0].text` not `data.choices[0].message.content` — generate.js translates this so index.html doesn't need to change
+- After adding a new Netlify env var, must trigger a redeploy for it to take effect (env vars don't auto-redeploy)
 
 ## Code style
 - Everything inline in `index.html` — `<style>` and `<script>` tags, no external files except jsPDF CDN
