@@ -3,14 +3,14 @@ export default async (request) => {
     return new Response('Method not allowed', { status: 405 });
   }
 
-  const body = await request.json().catch(() => ({}));
-  const { messages, max_tokens = 4096 } = body;
+  const body = await request.json();
+  const { messages, max_tokens = 8192 } = body;
 
   const upstream = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
-      'x-api-key': process.env.ANTHROPIC_API_KEY,
+      'x-api-key': Deno.env.get('ANTHROPIC_API_KEY'),
       'anthropic-version': '2023-06-01'
     },
     body: JSON.stringify({
@@ -29,8 +29,7 @@ export default async (request) => {
     );
   }
 
-  // Stream Anthropic SSE events → extract text deltas → pipe plain text to client
-  // The connection stays alive as chunks flow, bypassing Netlify's function timeout
+  // Extract text deltas from Anthropic SSE and stream plain text to client
   const { readable, writable } = new TransformStream();
   const writer = writable.getWriter();
   const encoder = new TextEncoder();
@@ -45,7 +44,7 @@ export default async (request) => {
         if (done) break;
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split('\n');
-        buffer = lines.pop(); // keep incomplete line for next chunk
+        buffer = lines.pop();
         for (const line of lines) {
           if (!line.startsWith('data: ')) continue;
           const data = line.slice(6).trim();
@@ -68,3 +67,5 @@ export default async (request) => {
     headers: { 'content-type': 'text/plain; charset=utf-8' }
   });
 };
+
+export const config = { path: '/.netlify/functions/generate' };
